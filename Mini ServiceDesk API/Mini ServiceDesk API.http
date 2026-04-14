@@ -1,0 +1,6 @@
+@Mini_ServiceDesk_API_HostAddress = http://localhost:5244
+
+GET {{Mini_ServiceDesk_API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
