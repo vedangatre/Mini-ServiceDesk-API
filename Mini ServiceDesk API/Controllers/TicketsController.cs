@@ -4,6 +4,7 @@ using Mini_ServiceDesk_API.Data;
 using Mini_ServiceDesk_API.Models;
 using Mini_ServiceDesk_API.Models.Enum;
 using Mini_ServiceDesk_API.Models.Entities;
+using Mini_ServiceDesk_API.Services;
 
 namespace Mini_ServiceDesk_API.Controllers
 {
@@ -13,14 +14,16 @@ namespace Mini_ServiceDesk_API.Controllers
     [Mini_ServiceDesk_API.Auth.ApiKeyAuth]
     public class TicketsController : ControllerBase
     {
+        private readonly ITicketService ticketService;
         private readonly ApplicationDbContext dbContext;
-        public TicketsController(ApplicationDbContext dbContext)
+        public TicketsController(ApplicationDbContext dbContext, ITicketService ticketService)
         {
             this.dbContext = dbContext;
+            this.ticketService = ticketService;
         }
 
         [HttpGet]
-        public IActionResult GetAllTickets(
+        public async Task<IActionResult> GetAllTickets(
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,
             [FromQuery] TicketStatus? status = null,
@@ -32,76 +35,25 @@ namespace Mini_ServiceDesk_API.Controllers
             if (page <= 0) page = 1;
             if (pageSize <= 0) pageSize = 10;
             pageSize = Math.Min(pageSize, 100);
-
-            var query = dbContext.Tickets.AsQueryable();
-
-            // Filtering
-            if (status.HasValue)
-            {
-                query = query.Where(t => t.Status == status.Value);
-            }
-            if (priority.HasValue)
-            {
-                query = query.Where(t => t.Priority == priority.Value);
-            }
-            if (!string.IsNullOrWhiteSpace(assignee))
-            {
-                query = query.Where(t => t.Assignee != null && t.Assignee.Contains(assignee));
-            }
-
-            // Sorting
-            var sort = (sortBy ?? "createdAt").ToLowerInvariant();
-            var ord = (order ?? "asc").ToLowerInvariant();
-            if (sort == "priority")
-            {
-                query = ord == "desc" ? query.OrderByDescending(t => t.Priority) : query.OrderBy(t => t.Priority);
-            }
-            else // createdAt (default)
-            {
-                query = ord == "desc" ? query.OrderByDescending(t => t.CreatedAt) : query.OrderBy(t => t.CreatedAt);
-            }
-
-            // Pagination
-            var totalCount = query.Count();
-            var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
-            var items = query.Skip((page - 1) * pageSize).Take(pageSize).ToList();
-
-            var result = new
-            {
-                page,
-                pageSize,
-                totalCount,
-                totalPages,
-                items
-            };
-
+            var result = await ticketService.GetAllTickets(page, pageSize, status, priority, assignee, sortBy, order);
             return Ok(result);
         }
 
         // Add Ticket
         [HttpPost]
-        public IActionResult AddTicket(Models.AddTicketDto addTicketDto)
+        public async Task<IActionResult> AddTicket(AddTicketDto addTicketDto)
         {
-            var ticketEntity = new Ticket()
-            {
-                Title = addTicketDto.Title,
-                Description = addTicketDto.Description,
-                Status = addTicketDto.Status,
-                Priority = addTicketDto.Priority,
-                Assignee = addTicketDto.Assignee
-            };
-            dbContext.Tickets.Add(ticketEntity);
-            dbContext.SaveChanges();
+            var ticketEntity = await ticketService.CreateTicket(addTicketDto);
             return Ok(ticketEntity);
         }
 
         // Get Ticket By ID
         [HttpGet]
         [Route("{id:guid}")]
-        public IActionResult GetTicketsById(Guid id)
+        public async Task<IActionResult> GetTicketsById(Guid id)
         {
-            var ticket = dbContext.Tickets.Find(id);
 
+            var ticket = await ticketService.FindTicketById(id);
             if (ticket is null)
             {
                 return NotFound();
@@ -112,80 +64,37 @@ namespace Mini_ServiceDesk_API.Controllers
         [HttpPatch]
         [Route("{id:guid}")]
         [Mini_ServiceDesk_API.Auth.ApiKeyAuth(Role = "agent")]
-        public IActionResult UpdateTicket(Guid id, UpdateTicketDto updateTicketDto)
+        public async Task<IActionResult> UpdateTicket(Guid id, UpdateTicketDto updateTicketDto)
         {
-            var ticket = dbContext.Tickets.Find(id);
-
+            var ticket = await ticketService.FindTicketById(id);
             if (ticket is null)
             {
                 return NotFound();
             }
-
-            // Title
-            if (!string.IsNullOrWhiteSpace(updateTicketDto.Title))
+            try
             {
-                ticket.Title = updateTicketDto.Title;
+                var updatedTicket = await ticketService.UpdateTicket(ticket, updateTicketDto);
+                return Ok(updatedTicket);
             }
-
-            // Assignee
-            if (updateTicketDto.Assignee is not null)
+            catch (InvalidOperationException ex)
             {
-                ticket.Assignee = updateTicketDto.Assignee;
+                return BadRequest(ex.Message);
             }
-
-            // Priority
-            if (updateTicketDto.Priority.HasValue)
-            {
-                ticket.Priority = updateTicketDto.Priority.Value;
-            }
-
-            // Status with validation
-            if (updateTicketDto.Status.HasValue)
-            {
-                var newStatus = updateTicketDto.Status.Value;
-                if (!IsValidStatusTransition(ticket.Status, newStatus))
-                {
-                    return BadRequest("invalid status transitions");
-                }
-                ticket.Status = newStatus;
-            }
-
-            dbContext.SaveChanges();
-            return Ok(ticket);
         }
 
-        private bool IsValidStatusTransition(TicketStatus current, TicketStatus next)
-        {
-            // allowed transitions:
-            // OPEN -> IN_PROGRESS
-            // IN_PROGRESS -> RESOLVED
-            // RESOLVED -> CLOSED
-            // IN_PROGRESS -> CLOSED (allow closing directly from in-progress)
-            if (current == next) return true;
-
-            return (current, next) switch
-            {
-                (TicketStatus.OPEN, TicketStatus.IN_PROGRESS) => true,
-                (TicketStatus.IN_PROGRESS, TicketStatus.RESOLVED) => true,
-                (TicketStatus.RESOLVED, TicketStatus.CLOSED) => true,
-                (TicketStatus.IN_PROGRESS, TicketStatus.CLOSED) => true,
-                _ => false
-            };
-        }
+      
 
         [HttpDelete]
         [Route("{id:guid}")]
         [Mini_ServiceDesk_API.Auth.ApiKeyAuth(Role = "agent")]
-        public IActionResult DeleteTicket(Guid id)
+        public async Task<IActionResult> DeleteTicket(Guid id)
         {
-            var ticket = dbContext.Tickets.Find(id);
+            var ticket = await ticketService.FindTicketById(id);
             if (ticket is null)
             {
                 return NotFound();
             }
-            dbContext.Tickets.Remove(ticket);
-            dbContext.SaveChanges();
-
+            await ticketService.RemoveTicket(ticket);
             return Ok();
         }
     }
