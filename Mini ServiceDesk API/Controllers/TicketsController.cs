@@ -1,9 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System.Linq;
 using Mini_ServiceDesk_API.Data;
 using Mini_ServiceDesk_API.Models;
 using Mini_ServiceDesk_API.Models.Enum;
-using Mini_ServiceDesk_API.Models.Entities;
 using Mini_ServiceDesk_API.Services;
 
 namespace Mini_ServiceDesk_API.Controllers
@@ -39,7 +37,6 @@ namespace Mini_ServiceDesk_API.Controllers
             return Ok(result);
         }
 
-        // Add Ticket
         [HttpPost]
         public async Task<IActionResult> AddTicket(AddTicketDto addTicketDto)
         {
@@ -47,7 +44,7 @@ namespace Mini_ServiceDesk_API.Controllers
             return Ok(ticketEntity);
         }
 
-        // Get Ticket By ID
+
         [HttpGet]
         [Route("{id:guid}")]
         public async Task<IActionResult> GetTicketsById(Guid id)
@@ -82,7 +79,7 @@ namespace Mini_ServiceDesk_API.Controllers
             }
         }
 
-      
+
 
         [HttpDelete]
         [Route("{id:guid}")]

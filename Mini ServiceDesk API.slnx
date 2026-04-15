@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="Mini ServiceDesk API/Mini ServiceDesk API.csproj" />
+  <Project Path="MiniServiceDeskAPI.UnitTests/MiniServiceDeskAPI.UnitTests.csproj" Id="8c2cea29-aa7e-4c72-97e2-ff20b99156af" />
 </Solution>

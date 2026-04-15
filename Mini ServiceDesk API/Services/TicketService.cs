@@ -9,11 +9,9 @@ namespace Mini_ServiceDesk_API.Services
     public class TicketService : ITicketService
     {
         private readonly ITicketRepository ticketRepository;
-        private readonly ApplicationDbContext dbContext;
 
-        public TicketService(ApplicationDbContext dbContext, ITicketRepository ticketRepository)
+        public TicketService(ITicketRepository ticketRepository)
         {
-            this.dbContext = dbContext;
             this.ticketRepository = ticketRepository;
         }
 
@@ -41,36 +39,7 @@ namespace Mini_ServiceDesk_API.Services
             return await ticketRepository.GetAll(page, pageSize, status, priority, assignee, sortBy, order);
         }
 
-        //private IQueryable<Ticket> ApplyFilters(IQueryable<Ticket> query, TicketStatus? status, TicketPriority? priority, string? assignee)
-        //{
-        //    if (status.HasValue)
-        //    {
-        //        query = query.Where(t => t.Status == status.Value);
-        //    }
-        //    if (priority.HasValue)
-        //    {
-        //        query = query.Where(t => t.Priority == priority.Value);
-        //    }
-        //    if (!string.IsNullOrWhiteSpace(assignee))
-        //    {
-        //        query = query.Where(t => t.Assignee != null && t.Assignee.Contains(assignee));
-        //    }
-        //    return query;
-        //}
-
-        //private IQueryable<Ticket> ApplySorting(IQueryable<Ticket> query, string? sortBy, string? order)
-        //{
-        //    var sort = (sortBy ?? "createdAt").ToLowerInvariant();
-        //    var ord = (order ?? "asc").ToLowerInvariant();
-
-        //    if (sort == "priority")
-        //    {
-        //        return ord == "desc" ? query.OrderByDescending(t => t.Priority) : query.OrderBy(t => t.Priority);
-        //    }
-
-        //    // Default: sort by CreatedAt
-        //    return ord == "desc" ? query.OrderByDescending(t => t.CreatedAt) : query.OrderBy(t => t.CreatedAt);
-        //}
+        
 
         public async Task RemoveTicket(Ticket ticket)
         {
@@ -79,25 +48,22 @@ namespace Mini_ServiceDesk_API.Services
 
         public async Task<Ticket> UpdateTicket(Ticket ticket, UpdateTicketDto updateTicketDto)
         {
-            // Title
+            
             if (!string.IsNullOrWhiteSpace(updateTicketDto.Title))
             {
                 ticket.Title = updateTicketDto.Title;
             }
 
-            // Assignee
             if (updateTicketDto.Assignee is not null)
             {
                 ticket.Assignee = updateTicketDto.Assignee;
             }
 
-            // Priority
             if (updateTicketDto.Priority.HasValue)
             {
                 ticket.Priority = updateTicketDto.Priority.Value;
             }
 
-            // Status with validation
             if (updateTicketDto.Status.HasValue)
             {
                 var newStatus = updateTicketDto.Status.Value;
@@ -113,11 +79,7 @@ namespace Mini_ServiceDesk_API.Services
 
         private bool IsValidStatusTransition(TicketStatus current, TicketStatus next)
         {
-            // allowed transitions:
-            // OPEN -> IN_PROGRESS
-            // IN_PROGRESS -> RESOLVED
-            // RESOLVED -> CLOSED
-            // IN_PROGRESS -> CLOSED (allow closing directly from in-progress)
+           
             if (current == next) return true;
 
             return (current, next) switch
