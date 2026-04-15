@@ -9,7 +9,7 @@ using Mini_ServiceDesk_API.Services;
 namespace Mini_ServiceDesk_API.Controllers
 {
     // localhost:xxxx/api/tickets
-    [Route("api/[controller]")]
+    [Route("api/v1/[controller]")]
     [ApiController]
     [Mini_ServiceDesk_API.Auth.ApiKeyAuth]
     public class TicketsController : ControllerBase
