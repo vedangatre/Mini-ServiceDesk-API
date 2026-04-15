@@ -4,7 +4,6 @@ namespace Mini_ServiceDesk_API.Models
 {
     public class UpdateTicketDto
     {
-        // Partial fields - only set the properties you want to update
         public string? Title { get; set; }
 
         public TicketStatus? Status { get; set; }
