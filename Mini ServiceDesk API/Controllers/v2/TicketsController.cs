@@ -11,8 +11,13 @@ namespace Mini_ServiceDesk_API.Controllers.v2
     public class TicketsController : ControllerBase
     {
         [HttpGet]
-        public IActionResult GetAllTickets()
+        public IActionResult GetAllTickets([FromQuery] string? order = "asc")
         {
+            if (string.Equals(order, "boom", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new Exception("boom");
+            }
+
             return Ok(new { message = "Get all tickets v2" });
         }
 

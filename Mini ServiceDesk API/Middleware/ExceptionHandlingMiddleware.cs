@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using Mini_ServiceDesk_API.Models;
 
 namespace Mini_ServiceDesk_API.Middleware
 {
@@ -29,13 +30,14 @@ namespace Mini_ServiceDesk_API.Middleware
                 context.Response.StatusCode = StatusCodes.Status500InternalServerError;
                 context.Response.ContentType = "application/json";
 
-                var errorResponse = new
+                var errorResponse = new ErrorResponse
                 {
-                    error = new
+                    Error = new ErrorInfo
                     {
-                        code = "INTERNAL_ERROR",
-                        message = "Something went wrong",
-                        traceId = traceId
+                        Code = "INTERNAL_ERROR",
+                        Message = "Something went wrong",
+                        Details = [],
+                        TraceId = traceId
                     }
                 };
 

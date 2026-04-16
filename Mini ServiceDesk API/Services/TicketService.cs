@@ -69,7 +69,7 @@ namespace Mini_ServiceDesk_API.Services
                 var newStatus = updateTicketDto.Status.Value;
                 if (!IsValidStatusTransition(ticket.Status, newStatus))
                 {
-                    throw new InvalidOperationException("invalid status transitions");
+                    throw new InvalidOperationException("Invalid status transitions");
                 }
                 ticket.Status = newStatus;
             }
