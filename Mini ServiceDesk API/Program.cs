@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Mini_ServiceDesk_API.Data;
 using Mini_ServiceDesk_API.Services;
+using Asp.Versioning;
+using Asp.Versioning.Conventions;
 using Mini_ServiceDesk_API.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,7 +11,22 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services
 // --------------------
 builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddApiVersioning(options =>
+{
+    options.AssumeDefaultVersionWhenUnspecified = true;
+    options.DefaultApiVersion = new ApiVersion(1, 0);
+    options.ReportApiVersions = true;
+}).AddMvc(options =>
+{
+    options.Conventions.Add(new VersionByNamespaceConvention());
+}).AddApiExplorer(options =>
+{
+    options.GroupNameFormat = "'v'VVV";
+    options.SubstituteApiVersionInUrl = true;
+});
+
+// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen();
 builder.Services.AddOpenApi();
 

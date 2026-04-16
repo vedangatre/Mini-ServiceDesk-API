@@ -1,15 +1,16 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Asp.Versioning;
+using Microsoft.AspNetCore.Mvc;
 using Mini_ServiceDesk_API.Data;
 using Mini_ServiceDesk_API.Models;
 using Mini_ServiceDesk_API.Models.Enum;
 using Mini_ServiceDesk_API.Services;
 
-namespace Mini_ServiceDesk_API.Controllers
+namespace Mini_ServiceDesk_API.Controllers.v1
 {
-    // localhost:xxxx/api/tickets
-    [Route("api/v1/[controller]")]
+    [Route("api/v{version:apiVersion}/[controller]")]
     [ApiController]
-    [Mini_ServiceDesk_API.Auth.ApiKeyAuth]
+    [ApiVersion("1.0")]
+    [Auth.ApiKeyAuth]
     public class TicketsController : ControllerBase
     {
         private readonly ITicketService ticketService;
@@ -38,10 +39,10 @@ namespace Mini_ServiceDesk_API.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> AddTicket(AddTicketDto addTicketDto)
+        public async Task<IActionResult> AddTicket([FromBody] AddTicketDto addTicketDto)
         {
             var ticketEntity = await ticketService.CreateTicket(addTicketDto);
-            return Ok(ticketEntity);
+            return CreatedAtAction(nameof(GetTicketsById), new { id = ticketEntity.Id }, ticketEntity);
         }
 
 
@@ -60,7 +61,7 @@ namespace Mini_ServiceDesk_API.Controllers
 
         [HttpPatch]
         [Route("{id:guid}")]
-        [Mini_ServiceDesk_API.Auth.ApiKeyAuth(Role = "agent")]
+        [Auth.ApiKeyAuth(Role = "agent")]
         public async Task<IActionResult> UpdateTicket(Guid id, UpdateTicketDto updateTicketDto)
         {
             var ticket = await ticketService.FindTicketById(id);
@@ -83,7 +84,7 @@ namespace Mini_ServiceDesk_API.Controllers
 
         [HttpDelete]
         [Route("{id:guid}")]
-        [Mini_ServiceDesk_API.Auth.ApiKeyAuth(Role = "agent")]
+        [Auth.ApiKeyAuth(Role = "agent")]
         public async Task<IActionResult> DeleteTicket(Guid id)
         {
             var ticket = await ticketService.FindTicketById(id);
@@ -92,7 +93,7 @@ namespace Mini_ServiceDesk_API.Controllers
                 return NotFound();
             }
             await ticketService.RemoveTicket(ticket);
-            return Ok();
+            return NoContent();
         }
     }
 }
