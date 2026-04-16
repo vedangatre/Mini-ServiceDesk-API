@@ -44,8 +44,10 @@ namespace Mini_ServiceDesk_API.Auth
 
             if (!string.IsNullOrWhiteSpace(Role) && !string.Equals(Role, role, StringComparison.OrdinalIgnoreCase))
             {
-     
-                context.Result = new ForbidResult();
+                context.Result = new ObjectResult(new { error = "Forbidden" })
+                {
+                    StatusCode = StatusCodes.Status403Forbidden
+                };
                 return;
             }
 

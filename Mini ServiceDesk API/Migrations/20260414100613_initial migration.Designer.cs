@@ -13,7 +13,7 @@ namespace Mini_ServiceDesk_API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
     [Migration("20260414100613_initial migration")]
-    partial class initialmigration
+    partial class InitialMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
